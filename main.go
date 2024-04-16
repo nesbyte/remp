@@ -5,7 +5,9 @@ import (
 	"remp/src"
 )
 
+var Version = "development"
+
 func main() {
-	app := src.SetupCli()
+	app := src.SetupCli(Version)
 	_ = app.Run(os.Args)
 }

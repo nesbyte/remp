@@ -7,7 +7,7 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-func SetupCli() *cli.App {
+func SetupCli(ver string) *cli.App {
 
 	cli.VersionFlag = &cli.BoolFlag{
 		Name:    "v",
@@ -36,7 +36,7 @@ func SetupCli() *cli.App {
 		HideHelpCommand:        true,
 		EnableBashCompletion:   true,
 		UseShortOptionHandling: true,
-		Version:                "v1.0.0",
+		Version:                ver,
 
 		Flags: []cli.Flag{
 			&cli.StringSliceFlag{

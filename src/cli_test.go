@@ -24,7 +24,7 @@ func runTableTest(t *testing.T, testCases []testCase) {
 
 	for _, tC := range testCases {
 
-		app := SetupCli()
+		app := SetupCli("dev")
 
 		_, err := pw.WriteString(tC.stdinPath)
 		if err != nil {
