@@ -1,0 +1,28 @@
+# This workflow will test a golang project
+# https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
+
+name: Go Test
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]    
+  workflow_call:
+
+jobs:
+  test-linux:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version-file: './go.mod'
+        
+    - name: Install dependencies
+      run: go get .
+
+    - name: Run Test
+      run: go test -v ./...
