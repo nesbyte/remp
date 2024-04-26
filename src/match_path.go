@@ -19,8 +19,11 @@ type Input struct {
 	SearchFromLeft    bool
 	ShowBaseDirectory bool
 	MatchAll          bool
+	OutputWhenNoMatch string
 	ShowColour        bool
 }
+
+var ErrNoMatch = errors.New("") // If there is no match, return empty string by default
 
 // Finds the project root
 func FindMatchesInPath(c Input) ([]string, error) {
@@ -82,7 +85,7 @@ func FindMatchesInPath(c Input) ([]string, error) {
 	}
 
 	if len(toReturn) == 0 {
-		return []string{}, errors.New("no match")
+		return []string{}, ErrNoMatch
 	}
 
 	return toReturn, nil

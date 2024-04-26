@@ -1,16 +1,20 @@
 package src
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/urfave/cli/v2"
 )
 
 type testCase struct {
 	flagsAndArgs   []string // As the cli command would be written
 	stdinPath      string
 	expectedOutput string
+	err            error // set to non nil if an error is expected
 }
 
 // Used to setup and run the cli table testing
@@ -26,14 +30,16 @@ func runTableTest(t *testing.T, testCases []testCase) {
 	for _, tC := range testCases {
 
 		app := SetupCli("dev")
+		app.ExitErrHandler = func(cCtx *cli.Context, err error) {
+			// Empty to not let the cli handle the errors
+		}
 
 		_, err := pw.WriteString(tC.stdinPath)
 		if err != nil {
 			t.Fatal(err.Error())
 		}
-
 		err = app.Run(append([]string{"dummy"}, tC.flagsAndArgs...))
-		if err != nil {
+		if !errors.Is(err, tC.err) {
 			t.Fatal(err.Error())
 		}
 
@@ -68,31 +74,37 @@ func TestRegexpFlag(t *testing.T) {
 			flagsAndArgs:   []string{"d2"},
 			stdinPath:      "test/d1/d2/d3",
 			expectedOutput: "test/d1/d2/d2f1.f",
+			err:            nil,
 		},
 		{
 			flagsAndArgs:   []string{"-e", "d2"},
 			stdinPath:      "test/d1/d2/d3",
 			expectedOutput: "test/d1/d2/d2f1.f",
+			err:            nil,
 		},
 		{
 			flagsAndArgs:   []string{"-regexp", "d2"},
 			stdinPath:      "test/d1/d2/d3",
 			expectedOutput: "test/d1/d2/d2f1.f",
+			err:            nil,
 		},
 		{
 			flagsAndArgs:   []string{".*2.f"},
 			stdinPath:      "test/d1/d2/d3",
 			expectedOutput: "test/d1/d2/d3/d3f2.f",
+			err:            nil,
 		},
 		{
 			flagsAndArgs:   []string{"-e", ".*2.f"},
 			stdinPath:      "test/d1/d2/d3",
 			expectedOutput: "test/d1/d2/d3/d3f2.f",
+			err:            nil,
 		},
 		{
 			flagsAndArgs:   []string{"-e", "d1", "-e", "d2"},
 			stdinPath:      "test/d1/d2/d3",
 			expectedOutput: "test/d1/d2/d2f1.f",
+			err:            nil,
 		},
 	}
 
@@ -106,31 +118,37 @@ func TestLineStringsFlag(t *testing.T) {
 			flagsAndArgs:   []string{"-X", "d2"},
 			stdinPath:      "test/d1/d2/d3",
 			expectedOutput: "test/d1/d2",
+			err:            nil,
 		},
 		{
 			flagsAndArgs:   []string{"--line-strings", "d2"},
 			stdinPath:      "test/d1/d2/d3",
 			expectedOutput: "test/d1/d2",
+			err:            nil,
 		},
 		{
 			flagsAndArgs:   []string{"-X", "d2f2.f"},
 			stdinPath:      "test/d1/d2/d3",
 			expectedOutput: "test/d1/d2/d2f2.f",
+			err:            nil,
 		},
 		{
 			flagsAndArgs:   []string{"-X", "d3"},
 			stdinPath:      "test/d1/d2/d3",
 			expectedOutput: "test/d1/d2/d3",
+			err:            nil,
 		},
 		{
 			flagsAndArgs:   []string{"-X", "d3f1.f"},
 			stdinPath:      "test/d1/d2/d3",
 			expectedOutput: "test/d1/d2/d3/d3f1.f",
+			err:            nil,
 		},
 		{
 			flagsAndArgs:   []string{"-X", "d1", "-X", "d2f2.f"},
 			stdinPath:      "test/d1/d2/d3",
 			expectedOutput: "test/d1/d2/d2f2.f",
+			err:            nil,
 		},
 	}
 
@@ -143,16 +161,19 @@ func TestFileFlag(t *testing.T) {
 			flagsAndArgs:   []string{"-f", "./test/input-test1"},
 			stdinPath:      "test/d1/d2/d3",
 			expectedOutput: "test/d1/d2/d2f1.f",
+			err:            nil,
 		},
 		{
 			flagsAndArgs:   []string{"-f", "./test/input-test2"},
 			stdinPath:      "test/d1/d2/d3",
 			expectedOutput: "test/d1/d2/d3/d3f1.f",
+			err:            nil,
 		},
 		{
 			flagsAndArgs:   []string{"-f", "./test/input-test3"},
 			stdinPath:      "test/d1/d2/d3",
 			expectedOutput: "test/d1/d2/d2f1.f",
+			err:            nil,
 		},
 	}
 	runTableTest(t, testCases)
@@ -165,6 +186,7 @@ func TestCombinePatternSources(t *testing.T) {
 			flagsAndArgs:   []string{"-e", ".*f1.f", "-X", "d2f2.f"},
 			stdinPath:      "test/d1/d2/d3",
 			expectedOutput: "test/d1/d2/d3/d3f1.f",
+			err:            nil,
 		},
 	}
 
@@ -177,16 +199,19 @@ func TestLeftFlag(t *testing.T) {
 			flagsAndArgs:   []string{"-l", "d2"},
 			stdinPath:      "test/d1/d2/d3",
 			expectedOutput: "test/d1/d2",
+			err:            nil,
 		},
 		{
 			flagsAndArgs:   []string{"-l", "f2.f"},
 			stdinPath:      "test/d1/d2/d3",
 			expectedOutput: "test/d1/d1f2.f",
+			err:            nil,
 		},
 		{
 			flagsAndArgs:   []string{"--left", "f2.f"},
 			stdinPath:      "test/d1/d2/d3",
 			expectedOutput: "test/d1/d1f2.f",
+			err:            nil,
 		},
 	}
 
@@ -199,16 +224,19 @@ func TestBaseDirectoryFlag(t *testing.T) {
 			flagsAndArgs:   []string{"-b", "d2"},
 			stdinPath:      "test/d1/d2/d3",
 			expectedOutput: "test/d1/d2",
+			err:            nil,
 		},
 		{
 			flagsAndArgs:   []string{"-b", "d1"},
 			stdinPath:      "test/d1/d2/d3",
 			expectedOutput: "test/d1",
+			err:            nil,
 		},
 		{
 			flagsAndArgs:   []string{"--base-directory", "d1"},
 			stdinPath:      "test/d1/d2/d3",
 			expectedOutput: "test/d1",
+			err:            nil,
 		},
 	}
 
@@ -221,21 +249,25 @@ func TestBaseDirectoryWithOtherFlags(t *testing.T) {
 			flagsAndArgs:   []string{"-ba", "d2.*.f"},
 			stdinPath:      "test/d1/d2/d3",
 			expectedOutput: "test/d1/d2\ntest/d1/d2",
+			err:            nil,
 		},
 		{
 			flagsAndArgs:   []string{"-bl", "d2"},
 			stdinPath:      "test/d1/d2/d3",
 			expectedOutput: "test/d1",
+			err:            nil,
 		},
 		{
 			flagsAndArgs:   []string{"-b", "-X", "d2f1.f"},
 			stdinPath:      "test/d1/d2/d3",
 			expectedOutput: "test/d1/d2",
+			err:            nil,
 		},
 		{
 			flagsAndArgs:   []string{"-b", "--color", "-X", "d2f1.f"},
 			stdinPath:      "test/d1/d2/d3",
 			expectedOutput: "test/d1/d2",
+			err:            nil,
 		},
 	}
 
@@ -248,11 +280,38 @@ func TestMatchAllFlag(t *testing.T) {
 			flagsAndArgs:   []string{"-a", "d2.*.f"},
 			stdinPath:      "test/d1/d2/d3",
 			expectedOutput: "test/d1/d2/d2f1.f\ntest/d1/d2/d2f2.f",
+			err:            nil,
 		},
 		{
 			flagsAndArgs:   []string{"--match-all", "d2.*.f"},
 			stdinPath:      "test/d1/d2/d3",
 			expectedOutput: "test/d1/d2/d2f1.f\ntest/d1/d2/d2f2.f",
+			err:            nil,
+		},
+	}
+
+	runTableTest(t, testCases)
+}
+
+func TestNoMatchOutputFlag(t *testing.T) {
+	testCases := []testCase{
+		{
+			flagsAndArgs:   []string{"-O", "abc", "-e", "definitely_wrong"},
+			stdinPath:      "test/d1/d2/d3",
+			expectedOutput: "abc",
+			err:            ErrNoMatch,
+		},
+		{
+			flagsAndArgs:   []string{"-O", ".", "-e", "definitely_wrong"},
+			stdinPath:      "test/d1/d2/d3",
+			expectedOutput: ".",
+			err:            ErrNoMatch,
+		},
+		{
+			flagsAndArgs:   []string{"--no-match", ".", "-e", "definitely_wrong"},
+			stdinPath:      "test/d1/d2/d3",
+			expectedOutput: ".",
+			err:            ErrNoMatch,
 		},
 	}
 

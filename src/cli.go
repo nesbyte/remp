@@ -79,10 +79,17 @@ func SetupCli(ver string) *cli.App {
 				Usage:       "Search entire path instead of exiting on the first match",
 				Destination: &i.MatchAll,
 			},
+			&cli.StringFlag{
+				Name:        "O",
+				Aliases:     []string{"no-match"},
+				Value:       "",
+				Usage:       "Custom stdout output when no match is found",
+				Destination: &i.OutputWhenNoMatch,
+			},
 			&cli.BoolFlag{
 				Name:        "color",
 				Value:       false,
-				Usage:       "Highlight matched term(s) with colour.",
+				Usage:       "Highlight matched term(s) with colour",
 				Destination: &i.ShowColour,
 			},
 		},
@@ -99,6 +106,12 @@ func SetupCli(ver string) *cli.App {
 
 			res, err := FindMatchesInPath(i)
 			if err != nil {
+				if err == ErrNoMatch {
+					if i.OutputWhenNoMatch != "" {
+						fmt.Println(i.OutputWhenNoMatch)
+					}
+					return cli.Exit(ErrNoMatch, 1)
+				}
 				return cli.Exit(err.Error(), 1)
 			}
 
